@@ -1,0 +1,14 @@
+CXX = g++
+CXXFLAGS = -std=c++11 -Wall
+SRC = numerical-integration.cpp
+OUT = integration
+
+all: $(OUT)
+
+$(OUT): $(SRC)
+	$(CXX) $(CXXFLAGS) -o $(OUT) $(SRC)
+
+.PHONY: clean
+
+clean:
+	rm -f $(OUT)

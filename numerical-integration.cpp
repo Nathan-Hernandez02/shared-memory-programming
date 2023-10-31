@@ -24,16 +24,26 @@ int main(int argc, char *argv[]) {
  
   double x = 0.0d;
   for (int i = 0; i < numPoints; i++) {
-   pi = pi + step*f(x);  // Add to local sum
+   pi = pi + step * f(x);  // Add to local sum
    x = x + step;  // next x
   }
  
   clock_gettime(CLOCK_MONOTONIC_RAW, &tock);
  
- execTime = 1000000000 * (tock.tv_sec - tick.tv_sec) + tock.tv_nsec - tick.tv_nsec;
- 
- printf("elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int) execTime);
+  execTime = 1000000000 * (tock.tv_sec - tick.tv_sec) + tock.tv_nsec - tick.tv_nsec;
+
+  printf("elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int) execTime);
 
   printf("%.20f\n", pi);
   return 0;
 }
+
+//Use your knowledge of basic calculus to explain briefly why this code provides an estimate for pi.
+/*
+  This code calculates pi by integrating a function over the interval [0, 1].
+  This code refelcts the riemann sum where numPoints is the amount of sub-intervals between 0 and 1.
+  At each sub-interval it calcultes the value and then multiplies it by the width of the step.
+  This works because each step represents the area under the curve of the function between 0 and 1.
+  By increasing the amount of numPoints the approximation of the value gets better.
+  Then it adds these values togetehr to compute the estimate  of pi.
+*/

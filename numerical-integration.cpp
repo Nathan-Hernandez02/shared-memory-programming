@@ -54,7 +54,9 @@ void sequential_program() {
 
 // 1.2 value of h you found experimentally?
 /*
-  The H value ==
+  The h value I found experimentally is .402. Which allows me to get the precent difference of 1%.
+  This was found using the forumla of the area of a circle divided by 2 to get the area of the semi-circle.
+  Then I minus-ed that off the axxporimate and then divdeded it by the area of the semi-circle to get a precentage.
 */
 
 double f_area(double x) {
@@ -65,29 +67,32 @@ void compute_area_semi_circle() {
   uint64_t execTime; /*time in nanoseconds */
   struct timespec tick, tock;
 
-  double step_size = 0.5;
-  double step = step_size / numPoints; // Width of each subinterval
+  //double step_size = 0.4052;
+  double step_size = 0.402;
+  double h_step = step_size / numPoints; // Width of each subinterval
   double area = 0.0;
 
   clock_gettime(CLOCK_MONOTONIC_RAW, &tick);
   for (int i = 0; i < numPoints; i++)
   {
-    double x = -0.5 + i * step; // Calculate x within the interval [-0.5, 0.5]
-    area += step * f_area(x);        // Add to local sum
+    double x = -0.5 + i * h_step * 2;    // Calculate x within the interval [-0.5, 0.5]
+    area += h_step * f_area(x);      // Add to local sum
   }
   clock_gettime(CLOCK_MONOTONIC_RAW, &tock);
 
-  double actualArea = M_PI / 2.0; // Actual area of the semicircle
+  double actualArea = M_PI * (0.5 * 0.5) / 2.0; // Actual area of the semicircle
 
   printf("Approximated area: %.10f\n", area);
   printf("Actual area: %.10f\n", actualArea);
 
-  // Calculate h for 1% accuracy
-  double h = sqrt(24 * (actualArea - area)) / numPoints;
-  printf("Step size (h) for 1%% accuracy: %.10f\n", h);
+  //Calculate h for 1% accuracy
+  // double h = sqrt(24 * (actualArea - area)) / numPoints;
+  // printf("Step size (h) for 1%% accuracy: %.10f\n", h);
+
+  double percentDifference = 100.0 * fabs((actualArea - area) / actualArea);
+  printf("Percentage Difference: %.2f%%\n", percentDifference);
 
   execTime = 1000000000 * (tock.tv_sec - tick.tv_sec) + tock.tv_nsec - tick.tv_nsec;
-
   printf("elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
 }
 
@@ -97,7 +102,13 @@ void compute_area_semi_circle() {
 // it should add it directly to the global variable pi without any synchronization.
 
 /*
+What values are computed by your code for different numbers of threads?
+Thread One: Estimated value of pi: 3.14159265335777337924
+Thread Two: Estimated value of pi: 3.14159265335772097671
+Thread Four: Estimated value of pi: 3.14159265335768012051
+Thread Eight: Estimated value of pi: 3.14159265335775961248
 
+Why would you expect that these values not to be accurate estimates of pi?
 
 */
 
@@ -126,19 +137,17 @@ void test_pthread() {
   int threadIds[numThreads];
 
   clock_gettime(CLOCK_MONOTONIC_RAW, &tick);
-  for (int i = 0; i < numThreads; i++)
-  {
+  for (int i = 0; i < numThreads; i++) {
     threadIds[i] = i;
     pthread_create(&threads[i], NULL, computePi, &threadIds[i]);
   }
 
-  for (int i = 0; i < numThreads; i++)
-  {
+  for (int i = 0; i < numThreads; i++) {
     pthread_join(threads[i], NULL);
   }
   clock_gettime(CLOCK_MONOTONIC_RAW, &tock);
 
-  printf("Estimated value of pi: %.20f\n", pi);
+  printf("Estimated value of pi: %.20f with %d threads \n", pi, numThreads);
   execTime = 1000000000 * (tock.tv_sec - tick.tv_sec) + tock.tv_nsec - tick.tv_nsec;
 
   printf("elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
@@ -252,13 +261,13 @@ void test_atomic()
 
 int main(int argc, char *argv[]) {
   //1.1
-  printf("----------------------STARTING TEST 1.1 ---------------------- \n\n");
-  sequential_program();
-  // printf("----------------------ENDING TEST 1.1 ---------------------- \n\n");
+  // printf("----------------------STARTING TEST 1.1 ---------------------- \n\n");
+  // sequential_program();
+  // // printf("----------------------ENDING TEST 1.1 ---------------------- \n\n");
 
-  // 1.2
-  printf("----------------------STARTING TEST 1.2 ---------------------- \n\n");
-  compute_area_semi_circle();
+  // // 1.2
+  // printf("----------------------STARTING TEST 1.2 ---------------------- \n\n");
+  // compute_area_semi_circle();
   // printf("----------------------ENDING TEST 1.2 ---------------------- \n\n");
 
   // 1.3
@@ -267,15 +276,15 @@ int main(int argc, char *argv[]) {
   test_pthread();
   // printf("----------------------ENDING TEST 1.3 ---------------------- \n\n");
 
-  // 1.4
-  pi = 0;
-  printf("----------------------STARTING TEST 1.4 ---------------------- \n\n");
-  test_mutex();
-  // printf("----------------------ENDING TEST 1.4 ---------------------- \n\n");
+  // // 1.4
+  // pi = 0;
+  // printf("----------------------STARTING TEST 1.4 ---------------------- \n\n");
+  // test_mutex();
+  // // printf("----------------------ENDING TEST 1.4 ---------------------- \n\n");
 
-  // 1.5
-  printf("----------------------STARTING TEST 1.5 ---------------------- \n\n");
-  test_atomic();
+  // // 1.5
+  // printf("----------------------STARTING TEST 1.5 ---------------------- \n\n");
+  // test_atomic();
 
   // 1.6
 

@@ -20,7 +20,7 @@ std::atomic<double> atomic_pi{0.0}; // used for 1.5 (given)
   At each sub-interval it calcultes the value and then multiplies it by the width of the step.
   This works because each step represents the area under the curve of the function between 0 and 1.
   By increasing the amount of numPoints the approximation of the value gets better.
-  Then it adds these values togetehr to compute the estimate  of pi.
+  Then it adds these values together to compute the estimate of pi.
 */
 
 double f(double x) {
@@ -73,8 +73,7 @@ void compute_area_semi_circle() {
   double area = 0.0;
 
   clock_gettime(CLOCK_MONOTONIC_RAW, &tick);
-  for (int i = 0; i < numPoints; i++)
-  {
+  for (int i = 0; i < numPoints; i++) {
     double x = -0.5 + i * h_step * 2;    // Calculate x within the interval [-0.5, 0.5]
     area += h_step * f_area(x);      // Add to local sum
   }
@@ -104,26 +103,26 @@ void compute_area_semi_circle() {
 /*
 What values are computed by your code for different numbers of threads?
 Thread One: Estimated value of pi: 3.14159265335777337924
-Thread Two: Estimated value of pi: 3.14159265335772097671
-Thread Four: Estimated value of pi: 3.14159265335768012051
-Thread Eight: Estimated value of pi: 3.14159265335775961248
+Thread Two: Estimated value of pi: 1.86073020853777881811
+Thread Four: Estimated value of pi: 0.98758784364113005871
+Thread Eight: Estimated value of pi: 0.45113222826663540443
 
 Why would you expect that these values not to be accurate estimates of pi?
-
+These will not be accurate estimes of pi due to the lack of synchronization.
+This happens because the threads are modifying the global value of pi.
+This introduces data races that will give inaccurate estimates of pi
+as you increase the number of threads.
 */
 
 void *computePi(void *arg) {
   int threadId = *(int *)arg;
   double step = 0.5 / numPoints;
-  double localSum = 0.0;
 
-  for (int i = threadId; i < numPoints; i += numThreads)
-  {
+  for (int i = threadId; i < numPoints; i += numThreads) {
     double x = i * step;
-    localSum += step * (6.0 / sqrt(1 - x * x));
+    double localSum = step * (6.0 / sqrt(1 - x * x));
+    pi += localSum;
   }
-
-  pi += localSum; // Add local sum to global pi
   return NULL;
 }
 
@@ -260,7 +259,7 @@ void test_atomic()
 }
 
 int main(int argc, char *argv[]) {
-  //1.1
+  // //1.1
   // printf("----------------------STARTING TEST 1.1 ---------------------- \n\n");
   // sequential_program();
   // // printf("----------------------ENDING TEST 1.1 ---------------------- \n\n");

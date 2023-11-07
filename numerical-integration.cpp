@@ -386,8 +386,7 @@ void test_local() {
 // and plot the running times and speedups you observe.
 // What value of pi is computed by your code when it is run on 8 threads?
 
-void *computePi_barrier(void *arg)
-{
+void *computePi_barrier(void *arg) {
   int threadId = *(int *)arg;
   double step = 0.5 / numPoints;
   double localSum = 0.0;
@@ -396,8 +395,9 @@ void *computePi_barrier(void *arg)
     double x = i * step;
     localSum += step * f(x);
   }
-  pthread_barrier_wait(&barrier);
   sum[threadId] = localSum;
+
+  pthread_barrier_wait(&barrier);
 
   return NULL;
 }
@@ -408,7 +408,7 @@ void test_barrier() {
   pthread_t threads[numThreads];
   int threadIds[numThreads];
 
-  pthread_barrier_init(&barrier, NULL, numThreads);
+  pthread_barrier_init(&barrier, NULL, numThreads + 1);
 
   clock_gettime(CLOCK_MONOTONIC_RAW, &tick);
   for (int i = 0; i < numThreads; i++) {
@@ -416,9 +416,7 @@ void test_barrier() {
     pthread_create(&threads[i], NULL, computePi_barrier, &threadIds[i]);
   }
 
-  for (int i = 0; i < numThreads; i++) {
-    pthread_join(threads[i], NULL);
-  }
+  pthread_barrier_wait(&barrier);
 
   for (int i = 0; i < numThreads; i++) {
     pi += sum[i];
@@ -433,41 +431,43 @@ void test_barrier() {
 }
 
 int main(int argc, char *argv[]) {
-  //1.1
-  printf("----------------------STARTING TEST 1.1 ---------------------- \n\n");
-  sequential_program();
+  // //1.1
+  // printf("----------------------STARTING TEST 1.1 ---------------------- \n\n");
+  // sequential_program();
 
-  // 1.2
-  printf("----------------------STARTING TEST 1.2 ---------------------- \n\n");
-  compute_area_semi_circle();
+  // // 1.2
+  // printf("----------------------STARTING TEST 1.2 ---------------------- \n\n");
+  // compute_area_semi_circle();
 
-  // 1.3
-  pi = 0;
-  printf("----------------------STARTING TEST 1.3 ---------------------- \n\n");
-  test_pthread();
+  // // 1.3
+  // pi = 0;
+  // printf("----------------------STARTING TEST 1.3 ---------------------- \n\n");
+  // test_pthread();
 
-  // 1.4
-  pi = 0;
-  printf("----------------------STARTING TEST 1.4 ---------------------- \n\n");
-  test_mutex();
+  // // 1.4
+  // pi = 0;
+  // printf("----------------------STARTING TEST 1.4 ---------------------- \n\n");
+  // test_mutex();
 
-  // 1.5
-  printf("----------------------STARTING TEST 1.5 ---------------------- \n\n");
-  // atomic function == 0.0 is given and is a global variable.
-  test_atomic();
+  // // 1.5
+  // printf("----------------------STARTING TEST 1.5 ---------------------- \n\n");
+  // // atomic function == 0.0 is given and is a global variable.
+  // test_atomic();
 
-  // 1.6
-  printf("----------------------STARTING TEST 1.6 ---------------------- \n\n");
-  init_sum();
-  test_sum();
+  // // 1.6
+  // printf("----------------------STARTING TEST 1.6 ---------------------- \n\n");
+  // init_sum();
+  // test_sum();
 
-  // 1.7
-  printf("----------------------STARTING TEST 1.7 ---------------------- \n\n");
-  init_sum();
-  test_local();
+  // // 1.7
+  // printf("----------------------STARTING TEST 1.7 ---------------------- \n\n");
+  // init_sum();
+  // test_local();
 
   // 1.8
-  printf("----------------------STARTING TEST 1.8 ---------------------- \n\n");
+  // printf("----------------------STARTING TEST 1.8 ---------------------- \n\n");
+  // init_sum();
+  // test_barrier();
 
   return 0;
 }

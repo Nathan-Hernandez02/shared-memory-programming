@@ -58,41 +58,46 @@ void sequential_program() {
 
 // 1.2 value of h you found experimentally?
 /*
-  The h value I found experimentally is .402. Which allows me to get the precent difference of 1%.
+  The h value I found experimentally is 0.00000000193450000000 Which allows me to get the precent difference of 1%.
   This was found using the forumla of the area of a circle divided by 2 to get the area of the semi-circle.
-  Then I minus-ed that off the axxporimate and then divdeded it by the area of the semi-circle to get a precentage.
+  Then I minus-ed that off the axporimate and then divdeded it by the area of the semi-circle to get a precentage.
 */
 
-double f_area(double x) {
+double f_semi(double x) {
   return sqrt(1 - x * x);
 }
 
 void compute_area_semi_circle() {
-  uint64_t execTime; /*time in nanoseconds */
+  uint64_t execTime; /* time in nanoseconds */
   struct timespec tick, tock;
 
-  //double step_size = 0.4052;
-  double step_size = 0.402;
-  double h_step = step_size / numPoints; // Width of each subinterval
-  double area = 0.0;
+  double step_size = 1.9345;
+  double h = step_size / numPoints;
+  printf("This is H: %.20f\n",h);
 
   clock_gettime(CLOCK_MONOTONIC_RAW, &tick);
+
+  double x = -1.0;
+  double semicircleArea = 0.0;
+
   for (int i = 0; i < numPoints; i++) {
-    double x = -0.5 + i * h_step * 2;    // Calculate x within the interval [-0.5, 0.5]
-    area += h_step * f_area(x);      // Add to local sum
+    semicircleArea += h * f_semi(x); // Add to the area
+    x += h;                     // next x
   }
+
   clock_gettime(CLOCK_MONOTONIC_RAW, &tock);
 
-  double actualArea = M_PI * (0.5 * 0.5) / 2.0; // Actual area of the semicircle
-
-  printf("Approximated area: %.10f\n", area);
-  printf("Actual area: %.10f\n", actualArea);
-
-  double percentDifference = 100.0 * fabs((actualArea - area) / actualArea);
-  printf("Percentage Difference: %.2f%%\n", percentDifference);
-
   execTime = 1000000000 * (tock.tv_sec - tick.tv_sec) + tock.tv_nsec - tick.tv_nsec;
-  printf("elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
+
+  printf("Elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
+  printf("Estimated semicircle area: %.20f\n", semicircleArea);
+
+  // Actual area of the semicircle
+  double actualArea = M_PI / 2.0;
+  printf("Actual semicircle area: %.20f\n", actualArea);
+
+  double error = fabs(actualArea - semicircleArea) / actualArea * 100.0;
+  printf("Percentage error: %.2f%%\n", error);
 }
 
 // 1.3 Find the running times (of only computing pi) for one, two, four and eight threads and plot the running
@@ -149,7 +154,7 @@ void test_pthread() {
   printf("Estimated value of pi: %.20f with %d threads \n", pi, numThreads);
   execTime = 1000000000 * (tock.tv_sec - tick.tv_sec) + tock.tv_nsec - tick.tv_nsec;
 
-  printf("elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
+  printf("Elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
 }
 
 // 1.4  you will study the effect of true-sharing on performance.
@@ -209,7 +214,7 @@ void test_mutex() {
 
   execTime = 1000000000 * (tock.tv_sec - tick.tv_sec) + tock.tv_nsec - tick.tv_nsec;
 
-  printf("elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
+  printf("Elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
 
   pthread_mutex_destroy(&mutex); // Clean up the mutex
 }
@@ -276,7 +281,7 @@ void test_atomic() {
   clock_gettime(CLOCK_MONOTONIC_RAW, &tock);
 
   execTime = 1000000000 * (tock.tv_sec - tick.tv_sec) + tock.tv_nsec - tick.tv_nsec;
-  printf("elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
+  printf("Elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
   printf("Estimated value of pi with %d threads: %.20f\n", numThreads, atomic_pi.load());
 }
 
@@ -328,7 +333,7 @@ void test_sum() {
   clock_gettime(CLOCK_MONOTONIC_RAW, &tock);
 
   execTime = 1000000000 * (tock.tv_sec - tick.tv_sec) + tock.tv_nsec - tick.tv_nsec;
-  printf("elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
+  printf("Elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
   printf("Estimated value of pi with %d threads: %.20f\n", numThreads, pi);
 }
 
@@ -377,7 +382,7 @@ void test_local() {
   clock_gettime(CLOCK_MONOTONIC_RAW, &tock);
 
   execTime = 1000000000 * (tock.tv_sec - tick.tv_sec) + tock.tv_nsec - tick.tv_nsec;
-  printf("elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
+  printf("Elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
   printf("Estimated value of pi with %d threads: %.20f\n", numThreads, pi);
 }
 
@@ -426,7 +431,7 @@ void test_barrier() {
   pthread_barrier_destroy(&barrier);
 
   execTime = 1000000000 * (tock.tv_sec - tick.tv_sec) + tock.tv_nsec - tick.tv_nsec;
-  printf("elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
+  printf("Elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
   printf("Estimated value of pi with %d threads: %.20f\n", numThreads, pi);
 }
 
@@ -435,9 +440,9 @@ int main(int argc, char *argv[]) {
   // printf("----------------------STARTING TEST 1.1 ---------------------- \n\n");
   // sequential_program();
 
-  // // 1.2
-  // printf("----------------------STARTING TEST 1.2 ---------------------- \n\n");
-  // compute_area_semi_circle();
+  // 1.2
+  printf("----------------------STARTING TEST 1.2 ---------------------- \n\n");
+  compute_area_semi_circle();
 
   // // 1.3
   // pi = 0;

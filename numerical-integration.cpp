@@ -6,12 +6,16 @@
 #include <time.h>    /* for clock_gettime */
 #include <atomic>    /*used in other parts of the assignment */
 
+#define MAX_THREADS 8
+
 //globals
 double pi = 0.0;
 int numPoints = 1000000000;
-int numThreads = 8;
+int numThreads = 4;
 pthread_mutex_t mutex; // used for 1.4
 std::atomic<double> atomic_pi{0.0}; // used for 1.5 (given)
+double sum[MAX_THREADS];            // used for 1.6
+pthread_barrier_t barrier;          // used for 1.8
 
 // 1.1 Use your knowledge of basic calculus to explain briefly why this code provides an estimate for pi.
 /*
@@ -84,10 +88,6 @@ void compute_area_semi_circle() {
   printf("Approximated area: %.10f\n", area);
   printf("Actual area: %.10f\n", actualArea);
 
-  //Calculate h for 1% accuracy
-  // double h = sqrt(24 * (actualArea - area)) / numPoints;
-  // printf("Step size (h) for 1%% accuracy: %.10f\n", h);
-
   double percentDifference = 100.0 * fabs((actualArea - area) / actualArea);
   printf("Percentage Difference: %.2f%%\n", percentDifference);
 
@@ -120,7 +120,7 @@ void *computePi(void *arg) {
 
   for (int i = threadId; i < numPoints; i += numThreads) {
     double x = i * step;
-    double localSum = step * (6.0 / sqrt(1 - x * x));
+    double localSum = step * f(x);
     pi += localSum;
   }
   return NULL;
@@ -152,11 +152,10 @@ void test_pthread() {
   printf("elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
 }
 
-// 1.4
-// Find the running times (of only computing pi) for one,
-// two, four and eight threads and plot the running times
-// and speedups you observe.  What value of pi is computed
-// by your code when it is run on 8 threads?
+// 1.4  you will study the effect of true-sharing on performance.
+// Modify the code in the previous part by using a pthread mutex to ensure that the global variable pi is updated atomically.
+// Find the running times (of only computing pi) for one, two, four and eight threads and plot the running times and speedups you observe.
+// What value of pi is computed by your code when it is run on 8 threads?
 // by using a pthread mutex to ensure that the global variable pi is updated atomically.
 
 /*
@@ -178,7 +177,7 @@ void *computePi_mutex(void *arg) {
 
   for (int i = threadId; i < numPoints; i += numThreads) {
     double x = i * step;
-    double localSum = step * (6.0 / sqrt(1 - x * x));
+    double localSum = step * f(x);
     pthread_mutex_lock(&mutex);
     pi += localSum;
     pthread_mutex_unlock(&mutex);
@@ -215,55 +214,58 @@ void test_mutex() {
   pthread_mutex_destroy(&mutex); // Clean up the mutex
 }
 
-// 1.5  you will study the effect of true-sharing on performance. 
-// Modify the code in the previous part by using a pthread mutex to ensure that the global variable pi is updated atomically.
-// Find the running times (of only computing pi) for one, two, four and eight threads and plot the running times and speedups you observe.
-// What value of pi is computed by your code when it is run on 8 threads?
+
+
+// 1.5 
+//As before, find the running times (of only computing pi) for one, two, four and eight threads
+//and plot the running times and speedups you observe.  Do you see any improvements in running 
+//times compared to the previous part in which you used mutexes? How about speedups? 
+//Explain your answers briefly.  What value of pi is computed by your code when it is run on 8 threads?
 
 /*
-  Thread One:
+  Thread One: elapsed process CPU time = 26121814373 nanoseconds
 
-  Thread Two:
+  Thread Two: elapsed process CPU time = 53295157960 nanoseconds
 
-  Thread Four:
+  Thread Four: elapsed process CPU time = 87286248495 nanoseconds
 
-  Thread Eight:
+  Thread Eight: elapsed process CPU time = 106242082047 nanoseconds
 
+  Do you see any improvements in running times compared to the previous part in which you used mutexes?
+
+  How about speedups?
+
+  What value of pi is computed by your code when it is run on 8 threads?
+  elapsed process CPU time = 106242082047 nanoseconds
+  Estimated value of pi with 8 threads: 3.14159265335784265716
 
 */
-
 // given function
 void add_to_pi(double bar) {
   auto current = atomic_pi.load();
-  while (!atomic_pi.compare_exchange_weak(current, current + bar))
-    ;
+  while (!atomic_pi.compare_exchange_weak(current, current + bar));
 }
 
 void *computePi_atomic(void *arg) {
   int threadId = *(int *)arg;
   double step = 0.5 / numPoints;
-  double localSum = 0.0;
 
-  for (int i = threadId; i < numPoints; i += numThreads)
-  {
+  for (int i = threadId; i < numPoints; i += numThreads) {
     double x = i * step;
-    localSum += step * (6.0 / sqrt(1 - x * x));
+    double localSum = step * f(x);
+    add_to_pi(localSum); // Add local sum to global pi
   }
-
-  add_to_pi(localSum);              // Add local sum to global pi
 
   return NULL;
 }
-void test_atomic()
-{
+void test_atomic() {
   uint64_t execTime; /*time in nanoseconds */
   struct timespec tick, tock;
   pthread_t threads[numThreads];
   int threadIds[numThreads];
 
   clock_gettime(CLOCK_MONOTONIC_RAW, &tick);
-  for (int i = 0; i < numThreads; i++)
-  {
+  for (int i = 0; i < numThreads; i++) {
     threadIds[i] = i;
     pthread_create(&threads[i], NULL, computePi_atomic, &threadIds[i]);
   }
@@ -275,27 +277,179 @@ void test_atomic()
 
   execTime = 1000000000 * (tock.tv_sec - tick.tv_sec) + tock.tv_nsec - tick.tv_nsec;
   printf("elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
+  printf("Estimated value of pi with %d threads: %.20f\n", numThreads, atomic_pi.load());
+}
+
+// 1.6 you will study the effect of false-sharing on performance.
+// Create a global array sum and have each thread t add its contribution directly into sum[t].
+// At the end, thread 0 can add the values in this array to produce the estimate for pi.
+// Find the running times (of only computing pi) for one, two, four and eight threads, 
+// and plot the running times and speedups you observe. 
+// What value of pi computed by your code when it is run on 8 threads?
+
+void init_sum() {
+  for (int i = 0; i < MAX_THREADS; i++) { 
+    sum[i] = 0.0;
+  }
+}
+
+void *computePi_sum(void *arg) {
+  int threadId = *(int *)arg;
+  double step = 0.5 / numPoints;
+
+  for (int i = threadId; i < numPoints; i += numThreads)
+  {
+    double x = i * step;
+    double localSum = step * f(x);
+    sum[threadId] += localSum; // Add to thread-specific sum
+  }
+  return NULL;
+}
+
+void test_sum() {
+  uint64_t execTime; /*time in nanoseconds */
+  struct timespec tick, tock;
+  pthread_t threads[numThreads];
+  int threadIds[numThreads];
+
+  clock_gettime(CLOCK_MONOTONIC_RAW, &tick);
+  for (int i = 0; i < numThreads; i++) {
+    threadIds[i] = i;
+    pthread_create(&threads[i], NULL, computePi_sum, &threadIds[i]);
+  }
+
+  for (int i = 0; i < numThreads; i++) {
+    pthread_join(threads[i], NULL);
+  }
+
+  for (int i = 0; i < numThreads; i++){
+    pi += sum[i];
+  }
+  clock_gettime(CLOCK_MONOTONIC_RAW, &tock);
+
+  execTime = 1000000000 * (tock.tv_sec - tick.tv_sec) + tock.tv_nsec - tick.tv_nsec;
+  printf("elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
+  printf("Estimated value of pi with %d threads: %.20f\n", numThreads, pi);
+}
+
+// 1.7 In this part of the assignment, you will study the performance benefit of eliminating both true-sharing and false-sharing.
+// Run the code given in class in which each thread has a local variable in which it keeps its running sum, 
+//and then writes its final contribution to the sum array. At the end, thread 0 adds up the values in the array to produce the estimate for pi.
+
+// Find the running times (of only computing pi) for one, two, four and eight threads
+// , and plot the running times and speedups you observe. 
+// What value of pi is computed by your code when it is run on 8 threads?
+
+void *computePi_local(void *arg)
+{
+  int threadId = *(int *)arg;
+  double step = 0.5 / numPoints;
+  double localSum = 0.0;
+
+  for (int i = threadId; i < numPoints; i += numThreads) {
+    double x = i * step;
+    localSum += step * f(x);
+  }
+  sum[threadId] = localSum;
+
+  return NULL;
+}
+
+void test_local() {
+  uint64_t execTime; /*time in nanoseconds */
+  struct timespec tick, tock;
+  pthread_t threads[numThreads];
+  int threadIds[numThreads];
+
+  clock_gettime(CLOCK_MONOTONIC_RAW, &tick);
+  for (int i = 0; i < numThreads; i++) {
+    threadIds[i] = i;
+    pthread_create(&threads[i], NULL, computePi_sum, &threadIds[i]);
+  }
+
+  for (int i = 0; i < numThreads; i++) {
+    pthread_join(threads[i], NULL);
+  }
+
+  for (int i = 0; i < numThreads; i++) {
+    pi += sum[i];
+  }
+  clock_gettime(CLOCK_MONOTONIC_RAW, &tock);
+
+  execTime = 1000000000 * (tock.tv_sec - tick.tv_sec) + tock.tv_nsec - tick.tv_nsec;
+  printf("elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
+  printf("Estimated value of pi with %d threads: %.20f\n", numThreads, pi);
+}
+
+// 1.8 The code used in the previous part used pthread_join. Replace this with a barrier and run your code again.
+// Find the running times (of only computing pi) for one, two, four and eight threads,
+// and plot the running times and speedups you observe.
+// What value of pi is computed by your code when it is run on 8 threads?
+
+void *computePi_barrier(void *arg)
+{
+  int threadId = *(int *)arg;
+  double step = 0.5 / numPoints;
+  double localSum = 0.0;
+
+  for (int i = threadId; i < numPoints; i += numThreads) {
+    double x = i * step;
+    localSum += step * f(x);
+  }
+  pthread_barrier_wait(&barrier);
+  sum[threadId] = localSum;
+
+  return NULL;
+}
+
+void test_barrier() {
+  uint64_t execTime; /*time in nanoseconds */
+  struct timespec tick, tock;
+  pthread_t threads[numThreads];
+  int threadIds[numThreads];
+
+  pthread_barrier_init(&barrier, NULL, numThreads);
+
+  clock_gettime(CLOCK_MONOTONIC_RAW, &tick);
+  for (int i = 0; i < numThreads; i++) {
+    threadIds[i] = i;
+    pthread_create(&threads[i], NULL, computePi_barrier, &threadIds[i]);
+  }
+
+  for (int i = 0; i < numThreads; i++) {
+    pthread_join(threads[i], NULL);
+  }
+
+  for (int i = 0; i < numThreads; i++) {
+    pi += sum[i];
+  }
+  clock_gettime(CLOCK_MONOTONIC_RAW, &tock);
+
+  pthread_barrier_destroy(&barrier);
+
+  execTime = 1000000000 * (tock.tv_sec - tick.tv_sec) + tock.tv_nsec - tick.tv_nsec;
+  printf("elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int)execTime);
   printf("Estimated value of pi with %d threads: %.20f\n", numThreads, pi);
 }
 
 int main(int argc, char *argv[]) {
-  // //1.1
-  // printf("----------------------STARTING TEST 1.1 ---------------------- \n\n");
-  // sequential_program();
+  //1.1
+  printf("----------------------STARTING TEST 1.1 ---------------------- \n\n");
+  sequential_program();
 
-  // // 1.2
-  // printf("----------------------STARTING TEST 1.2 ---------------------- \n\n");
-  // compute_area_semi_circle();
+  // 1.2
+  printf("----------------------STARTING TEST 1.2 ---------------------- \n\n");
+  compute_area_semi_circle();
 
-  // // 1.3
-  // pi = 0;
-  // printf("----------------------STARTING TEST 1.3 ---------------------- \n\n");
-  // test_pthread();
+  // 1.3
+  pi = 0;
+  printf("----------------------STARTING TEST 1.3 ---------------------- \n\n");
+  test_pthread();
 
-  // // 1.4
-  // pi = 0;
-  // printf("----------------------STARTING TEST 1.4 ---------------------- \n\n");
-  // test_mutex();
+  // 1.4
+  pi = 0;
+  printf("----------------------STARTING TEST 1.4 ---------------------- \n\n");
+  test_mutex();
 
   // 1.5
   printf("----------------------STARTING TEST 1.5 ---------------------- \n\n");
@@ -303,10 +457,17 @@ int main(int argc, char *argv[]) {
   test_atomic();
 
   // 1.6
+  printf("----------------------STARTING TEST 1.6 ---------------------- \n\n");
+  init_sum();
+  test_sum();
 
   // 1.7
+  printf("----------------------STARTING TEST 1.7 ---------------------- \n\n");
+  init_sum();
+  test_local();
 
   // 1.8
+  printf("----------------------STARTING TEST 1.8 ---------------------- \n\n");
 
   return 0;
 }

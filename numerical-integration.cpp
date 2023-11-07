@@ -9,7 +9,7 @@
 //globals
 double pi = 0.0;
 int numPoints = 1000000000;
-int numThreads = 4;
+int numThreads = 8;
 pthread_mutex_t mutex; // used for 1.4
 std::atomic<double> atomic_pi{0.0}; // used for 1.5 (given)
 
@@ -159,21 +159,30 @@ void test_pthread() {
 // by your code when it is run on 8 threads?
 // by using a pthread mutex to ensure that the global variable pi is updated atomically.
 
+/*
+What running times are computed by your code for different numbers of threads?  (these need to be plotted)
+
+Thread One: elapsed process CPU time = 13180457171 nanoseconds
+Thread Two: elapsed process CPU time = 71685968384 nanoseconds
+Thread Four: elapsed process CPU time = 72037857126 nanoseconds
+Thread Eight: elapsed process CPU time = 77524101691 nanoseconds
+
+Thread Eight (Value of Pi): Estimated value of pi with 8 threads: 3.14159265335776005656
+
+*/
+
 void *computePi_mutex(void *arg) {
   int threadId = *(int *)arg;
   double step = 0.5 / numPoints;
-  double localSum = 0.0;
+  // double localSum = 0.0;
 
   for (int i = threadId; i < numPoints; i += numThreads) {
     double x = i * step;
-    localSum += step * (6.0 / sqrt(1 - x * x));
+    double localSum = step * (6.0 / sqrt(1 - x * x));
+    pthread_mutex_lock(&mutex);
+    pi += localSum;
+    pthread_mutex_unlock(&mutex);
   }
-
-  // Lock the mutex before updating pi
-  pthread_mutex_lock(&mutex);
-  pi += localSum;               // Add local sum to global pi
-  pthread_mutex_unlock(&mutex); // Unlock the mutex
-
   return NULL;
 }
 
@@ -206,17 +215,31 @@ void test_mutex() {
   pthread_mutex_destroy(&mutex); // Clean up the mutex
 }
 
+// 1.5  you will study the effect of true-sharing on performance. 
+// Modify the code in the previous part by using a pthread mutex to ensure that the global variable pi is updated atomically.
+// Find the running times (of only computing pi) for one, two, four and eight threads and plot the running times and speedups you observe.
+// What value of pi is computed by your code when it is run on 8 threads?
 
-//1.5
-void add_to_pi(double bar)
-{
+/*
+  Thread One:
+
+  Thread Two:
+
+  Thread Four:
+
+  Thread Eight:
+
+
+*/
+
+// given function
+void add_to_pi(double bar) {
   auto current = atomic_pi.load();
   while (!atomic_pi.compare_exchange_weak(current, current + bar))
     ;
 }
 
-void *computePi_atomic(void *arg)
-{
+void *computePi_atomic(void *arg) {
   int threadId = *(int *)arg;
   double step = 0.5 / numPoints;
   double localSum = 0.0;
@@ -227,10 +250,7 @@ void *computePi_atomic(void *arg)
     localSum += step * (6.0 / sqrt(1 - x * x));
   }
 
-  // Lock the mutex before updating pi
-  // pthread_mutex_lock(&mutex);
   add_to_pi(localSum);              // Add local sum to global pi
-  // pthread_mutex_unlock(&mutex); // Unlock the mutex
 
   return NULL;
 }
@@ -262,28 +282,25 @@ int main(int argc, char *argv[]) {
   // //1.1
   // printf("----------------------STARTING TEST 1.1 ---------------------- \n\n");
   // sequential_program();
-  // // printf("----------------------ENDING TEST 1.1 ---------------------- \n\n");
 
   // // 1.2
   // printf("----------------------STARTING TEST 1.2 ---------------------- \n\n");
   // compute_area_semi_circle();
-  // printf("----------------------ENDING TEST 1.2 ---------------------- \n\n");
 
-  // 1.3
-  pi = 0;
-  printf("----------------------STARTING TEST 1.3 ---------------------- \n\n");
-  test_pthread();
-  // printf("----------------------ENDING TEST 1.3 ---------------------- \n\n");
+  // // 1.3
+  // pi = 0;
+  // printf("----------------------STARTING TEST 1.3 ---------------------- \n\n");
+  // test_pthread();
 
   // // 1.4
   // pi = 0;
   // printf("----------------------STARTING TEST 1.4 ---------------------- \n\n");
   // test_mutex();
-  // // printf("----------------------ENDING TEST 1.4 ---------------------- \n\n");
 
-  // // 1.5
-  // printf("----------------------STARTING TEST 1.5 ---------------------- \n\n");
-  // test_atomic();
+  // 1.5
+  printf("----------------------STARTING TEST 1.5 ---------------------- \n\n");
+  // atomic function == 0.0 is given and is a global variable.
+  test_atomic();
 
   // 1.6
 

@@ -661,7 +661,7 @@ void prefix_pi_variant(int arrSize, int threads) {
   con = (double *)malloc(arrSize * sizeof(double));
   segment_length = arrSize / threads;
   for (int i = 0; i < arrSize; i++) {
-    con[i] = (double(rand() % 10001)) / 100;
+    con[i] = (double(rand() % 10000)) + 1 / 100;
   }
 
   clock_gettime(CLOCK_MONOTONIC_RAW, &tick);

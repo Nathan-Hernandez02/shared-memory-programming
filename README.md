@@ -5,6 +5,7 @@ Nathan Hernandez
 11/08/2023
 
 Assignment 5
+All the tests ran on my local machine.
 
 
 To Run code:

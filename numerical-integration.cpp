@@ -596,12 +596,11 @@ Elapsed process CPU time = 2943576 nanoseconds
 */
 
 void *computePi_prefix(void *threadIdPtr) {
-  int tid = *(int *)threadIdPtr;  
-  int start = tid * segment_length;
-  int fin = start + segment_length;
+  int start = *(int *)threadIdPtr * segment_length;
+  int end = start + segment_length;
 
   double fromLeft = 0;
-  for (int i = start; i < fin; i++) {
+  for (int i = start; i < end; i++) {
     con[i] = con[i] + fromLeft;
     fromLeft = con[i];
   }
@@ -609,12 +608,11 @@ void *computePi_prefix(void *threadIdPtr) {
 }
 
 void *correct_prefix(void *threadIdPtr) {
-  int tid = *(int *)threadIdPtr;
-  int start = tid * segment_length;
-  int fin = start + segment_length - 1;
+  int start = *(int *)threadIdPtr * segment_length;
+  int end = start + segment_length - 1;
   double fromLeft = con[start - 1];
 
-  for (int i = start; i < fin; i++) {
+  for (int i = start; i < end; i++) {
     con[i] = con[i] + fromLeft;
   }
   return NULL;
@@ -634,8 +632,7 @@ void compute_segments(pthread_t thread[], int thread_id[], int num_segments, int
   int start = segment_length + (segment_length - 1);
   int fromLeft = con[segment_length - 1];
 
-  for (int i = start; i < arrLength; i += segment_length)
-  {
+  for (int i = start; i < arrLength; i += segment_length) {
     con[i] = con[i] + fromLeft;
     fromLeft = con[i];
   }
@@ -741,7 +738,7 @@ void run_section_two() {
 
 
 int main(int argc, char *argv[]) {
-  run_section_one();
-  // run_section_two();
+  // run_section_one();
+  run_section_two();
   return 0;
 }

@@ -1,11 +1,27 @@
 # shared-memory-programming
 
-This assignment has two parts. The first part asks you to reproduce the results shown in class for the numerical integration problem. The second part asks you to implement a parallel prefix-sum program using one of the algorithms discussed in class.
 
-A sequential program for performing the numerical integration is available here. It is an adaptation of the code I showed you in class.  The code includes some header files that you will need in the rest of the assignment. Read this code and run it. It prints the estimate for pi and the running time in nanoseconds. 
-What to turn in:
+Nathan Hernandez
+11/08/2023
 
-# Use your knowledge of basic calculus to explain briefly why this code provides an estimate for pi.
+Assignment 5
+
+
+To Run code:
+
+1. make clean
+2. make all
+3. make run
+
+to run different thread cases you need to change the global for the amount of threads
+
+# int numThreads = 1;
+
+Then all you do is run
+
+# make clean; make all; make run
+
+for each thread [1,2,4,8] that you want to run.
 
 
 

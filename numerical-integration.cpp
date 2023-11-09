@@ -683,43 +683,43 @@ void prefix_pi_variant(int arrSize, int threads) {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void run_section_one() {
-  // //1.1
-  // printf("----------------------STARTING TEST 1.1 ---------------------- \n\n");
-  // sequential_program();
+  //1.1
+  printf("----------------------STARTING TEST 1.1 ---------------------- \n\n");
+  sequential_program();
 
   //1.2
   printf("----------------------STARTING TEST 1.2 ---------------------- \n\n");
   compute_area_semi_circle();
 
-  // // 1.3
-  // pi = 0;
-  // printf("----------------------STARTING TEST 1.3 ---------------------- \n\n");
-  // test_pthread();
+  // 1.3
+  pi = 0;
+  printf("----------------------STARTING TEST 1.3 ---------------------- \n\n");
+  test_pthread();
 
-  // // 1.4
-  // pi = 0;
-  // printf("----------------------STARTING TEST 1.4 ---------------------- \n\n");
-  // test_mutex();
+  // 1.4
+  pi = 0;
+  printf("----------------------STARTING TEST 1.4 ---------------------- \n\n");
+  test_mutex();
 
-  // // 1.5
-  // printf("----------------------STARTING TEST 1.5 ---------------------- \n\n");
-  // // atomic function == 0.0 is given and is a global variable.
-  // test_atomic();
+  // 1.5
+  printf("----------------------STARTING TEST 1.5 ---------------------- \n\n");
+  // atomic function == 0.0 is given and is a global variable.
+  test_atomic();
 
-  // // 1.6
-  // printf("----------------------STARTING TEST 1.6 ---------------------- \n\n");
-  // init_sum();
-  // test_sum();
+  // 1.6
+  printf("----------------------STARTING TEST 1.6 ---------------------- \n\n");
+  init_sum();
+  test_sum();
 
-  // // 1.7
-  // printf("----------------------STARTING TEST 1.7 ---------------------- \n\n");
-  // init_sum();
-  // test_local();
+  // 1.7
+  printf("----------------------STARTING TEST 1.7 ---------------------- \n\n");
+  init_sum();
+  test_local();
 
-  // //1.8
-  // printf("----------------------STARTING TEST 1.8 ---------------------- \n\n");
-  // init_sum();
-  // test_barrier();
+  //1.8
+  printf("----------------------STARTING TEST 1.8 ---------------------- \n\n");
+  init_sum();
+  test_barrier();
 }
 
 void run_section_two() {
@@ -738,7 +738,7 @@ void run_section_two() {
 
 
 int main(int argc, char *argv[]) {
-  // run_section_one();
+  run_section_one();
   run_section_two();
   return 0;
 }
